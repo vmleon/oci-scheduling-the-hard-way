@@ -192,6 +192,29 @@ List the crontab
 crontab -l
 ```
 
+After the scheduling happens you can see the logs of `cron` by reading `/var/log/cron`.
+
+```bash
+tail /var/log/cron
+```
+
+You should see something like this:
+
+```
+Sep 30 11:20:01 scheduler CROND[15369]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 11:30:01 scheduler CROND[17576]: (opc) CMD (/bin/sh start_instance.sh)
+Sep 30 11:40:01 scheduler CROND[19820]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 11:50:01 scheduler CROND[22043]: (opc) CMD (/bin/sh start_instance.sh)
+Sep 30 12:00:01 scheduler CROND[24242]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 12:10:01 scheduler CROND[26512]: (opc) CMD (/bin/sh start_instance.sh)
+Sep 30 12:20:02 scheduler CROND[28730]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 12:30:01 scheduler CROND[30929]: (opc) CMD (/bin/sh start_instance.sh)
+```
+
+If you want to append the logs of the execution of the scripts you can edit the crontab with something like this:
+
+`0,20,40 * * * * /bin/sh stop_instance.sh >> /home/opc/logs/stop_instance.log 2>&1`
+
 ### Useful crontab entries
 
 Execute at 2am daily
