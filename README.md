@@ -158,7 +158,61 @@ You should get a response in JSON format.
 
 Create start and stop bash scripts and test them
 
+```bash
+vim start_instance.sh
+```
+
+```bash
+vim stop_instance.sh
+```
+
+```bash
+chmod u+x start_instance.sh
+```
+
+```bash
+chmod u+x stop_instance.sh
+```
+
 Create a `cron` tab for the schedule time.
+
+```bash
+crontab -e
+```
+
+```bash
+0,20,40 * * * * /bin/sh stop_instance.sh
+10,30,50 * * * * /bin/sh start_instance.sh
+```
+
+Schedule a cron to execute on every 10 minutes
+List the crontab
+
+```bash
+crontab -l
+```
+
+### Useful crontab entries
+
+Execute at 2am daily
+
+`0 2 * * * /bin/sh backup.sh`
+
+Execute twice a day
+
+`0 4,16 * * * /home/user/job.sh`
+
+Execute on every minute
+
+`* * * * * /home/user/job.sh`
+
+Execute on every Sunday at 10 PM
+
+`0 22 * * sun /home/user/job.sh`
+
+Execute on every 10 minutes
+
+`*/10 * * * * /home/user/job.sh`
 
 ## Watch out
 
