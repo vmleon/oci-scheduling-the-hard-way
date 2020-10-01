@@ -201,6 +201,7 @@ crontab -e
 ```
 
 ```bash
+PATH=/home/opc/bin:$PATH
 0,20,40 * * * * /home/opc/stop_instance.sh >> /home/opc/stop.log 2>&1
 10,30,50 * * * * /home/opc/start_instance.sh >> /home/opc/start.log 2>&1
 ```
