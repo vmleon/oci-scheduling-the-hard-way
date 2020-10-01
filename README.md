@@ -156,14 +156,34 @@ You should get a response in JSON format.
 
 ### Scheduling with cron
 
-Create start and stop bash scripts and test them
+Create a bash script for starting the resource:
 
 ```bash
 vim start_instance.sh
 ```
 
+With the following script"
+
+```bash
+#!/bin/bash
+INSTANCE_ID=<ocid_of_your_instance>
+echo "Starting instance..."
+oci compute instance action --action START --wait-for-state RUNNING --instance-id $INSTANCE_ID
+```
+
+Create a bash script for stopping the resource:
+
 ```bash
 vim stop_instance.sh
+```
+
+With the following script"
+
+```bash
+#!/bin/bash
+INSTANCE_ID=<ocid_of_your_instance>
+echo "Stopping instance..."
+oci compute instance action --action SOFTSTOP --instance-id $INSTANCE_ID
 ```
 
 ```bash
@@ -181,9 +201,11 @@ crontab -e
 ```
 
 ```bash
-0,20,40 * * * * /bin/sh stop_instance.sh
-10,30,50 * * * * /bin/sh start_instance.sh
+0,20,40 * * * * /home/opc/stop_instance.sh >> /home/opc/stop.log 2>&1
+10,30,50 * * * * /home/opc/start_instance.sh >> /home/opc/start.log 2>&1
 ```
+
+> Remember to change the paths if you use other user or Linux distribution
 
 Schedule a cron to execute on every 10 minutes
 List the crontab
@@ -198,28 +220,23 @@ After the scheduling happens you can see the logs of `cron` by reading `/var/log
 tail /var/log/cron
 ```
 
-You should see something like this:
+> You might need sudo to have access to `var/log/cron`
+
+You should see something like this after half an hour or so:
 
 ```
 Sep 30 11:20:01 scheduler CROND[15369]: (opc) CMD (/bin/sh stop_instance.sh)
 Sep 30 11:30:01 scheduler CROND[17576]: (opc) CMD (/bin/sh start_instance.sh)
 Sep 30 11:40:01 scheduler CROND[19820]: (opc) CMD (/bin/sh stop_instance.sh)
-Sep 30 11:50:01 scheduler CROND[22043]: (opc) CMD (/bin/sh start_instance.sh)
-Sep 30 12:00:01 scheduler CROND[24242]: (opc) CMD (/bin/sh stop_instance.sh)
-Sep 30 12:10:01 scheduler CROND[26512]: (opc) CMD (/bin/sh start_instance.sh)
-Sep 30 12:20:02 scheduler CROND[28730]: (opc) CMD (/bin/sh stop_instance.sh)
-Sep 30 12:30:01 scheduler CROND[30929]: (opc) CMD (/bin/sh start_instance.sh)
 ```
 
-If you want to append the logs of the execution of the scripts you can edit the crontab with something like this:
-
-`0,20,40 * * * * /bin/sh stop_instance.sh >> /home/opc/logs/stop_instance.log 2>&1`
+You will also have `start.log` and `stop.log` log files on `/home/opc`.
 
 ### Useful crontab entries
 
 Execute at 2am daily
 
-`0 2 * * * /bin/sh backup.sh`
+`0 2 * * * /home/user/job.sh`
 
 Execute twice a day
 
@@ -241,6 +258,7 @@ Execute on every 10 minutes
 
 This is just a simple example to make you familiar with OCI, in a production environment you should look out for:
 
-- High Availability, what happens when the `scheduler` fail?
-- Observability, do I know if the `scheduler` fails to perform an action?
-- Don't use public IPs directly with SSH, better to use a bastion host
+- **High Availability**, what happens when the `scheduler` fail?
+- **Observability**, do I know if the `scheduler` fails to perform an action?
+- Don't use public IPs directly with SSH, better to use a **bastion host**
+- Configure `oci` with a user that only have **permissions** to work on a compartment and do the actions that you need
