@@ -177,7 +177,7 @@ Create a bash script for stopping the resource:
 vim stop_instance.sh
 ```
 
-With the following script"
+With the following script
 
 ```bash
 #!/bin/bash
@@ -232,6 +232,14 @@ Sep 30 11:40:01 scheduler CROND[19820]: (opc) CMD (/bin/sh stop_instance.sh)
 ```
 
 You will also have `start.log` and `stop.log` log files on `/home/opc`.
+
+### Check the results
+
+You can wait on the details page of the instance and see how the instance is coming up and down every 10 minutes.
+
+Check the metrics as well, they should look something like this:
+
+![Metrics](images/metrics.png)
 
 ### Useful crontab entries
 
