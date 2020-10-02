@@ -1,8 +1,10 @@
 # OCI Scheduling (The Hard Way)
 
-Save some money when you don't need resources out of business hours.
+Save some money when you don't need resources out of business hours by automatically schedule starting and stopping the resources.
 
 Learn some of the features of the Oracle Cloud Infrastructure (OCI) Command Line Interface (CLI) examples.
+
+![Puppet](images/puppet.jpg)
 
 > USE THIS PROJECT AT YOUR OWN RISK
 >
@@ -16,7 +18,7 @@ Take note of the compartment `OCID` the instance is being created in.
 
 > You can find compartments and the `OCID` on `Menu > Identity > Compartments` on the Oracle Cloud web console.
 
-Let's call the machine `scheduled`.
+Let's call the machine `puppet`.
 
 ## Get familiar with OCI Command Line Interface
 
@@ -46,16 +48,16 @@ List your instances in the compartment and filter relevant information with `jq`
 oci compute instance list -c $C | jq '.data[] | {ocid: .id, name: ."display-name", status: ."lifecycle-state"}'
 ```
 
-Export variable `INSTANCE_ID` with instance OCID:
+Export variable `PUPPET_INSTANCE` with instance OCID:
 
 ```bash
-export INSTANCE_ID=<instance_ocid>
+export PUPPET_INSTANCE=<instance_ocid>
 ```
 
 Ask the instance to stop, nicely:
 
 ```bash
-oci compute instance action --action SOFTSTOP --instance-id $INSTANCE_ID
+oci compute instance action --action SOFTSTOP --instance-id $PUPPET_INSTANCE
 ```
 
 As part of scripting for DevOps, it is nice if we wait for the action to be performed.
@@ -63,12 +65,22 @@ As part of scripting for DevOps, it is nice if we wait for the action to be perf
 To Start the instance and wait for the action to be completed:
 
 ```bash
-oci compute instance action --action START --wait-for-state RUNNING --instance-id $INSTANCE_ID
+oci compute instance action --action START --wait-for-state RUNNING --instance-id $PUPPET_INSTANCE
 ```
+
+## Create a IAM user
+
+Create a IAM user called `hand`
+
+Go to `Menu > Identity > Users` and click `Create User`. Select `IAM User`.
+
+Copy the Oracle Cloud Identifier (OCID) of the new user, it should look something like this:
+
+`ocid1.user.oc1..aaaaaaaax5lzqijkcilif5dxhuf3bsghpgsdm4eksqg4fpqhej523hswqxta`
 
 ## Create the VM to schedule resources
 
-Once again, create a new virtual machine. This time we are going to call it `scheduler`.
+Once again, create a new virtual machine. This time we are going to call it `hand`.
 
 > Pick the smallest shape as the workload is going to be minimal
 
@@ -166,9 +178,9 @@ With the following script"
 
 ```bash
 #!/bin/bash
-INSTANCE_ID=<ocid_of_your_instance>
+PUPPET_INSTANCE=<ocid_of_your_instance>
 echo "Starting instance..."
-oci compute instance action --action START --wait-for-state RUNNING --instance-id $INSTANCE_ID
+oci compute instance action --action START --wait-for-state RUNNING --instance-id $PUPPET_INSTANCE
 ```
 
 Create a bash script for stopping the resource:
@@ -181,9 +193,9 @@ With the following script
 
 ```bash
 #!/bin/bash
-INSTANCE_ID=<ocid_of_your_instance>
+PUPPET_INSTANCE=<ocid_of_your_instance>
 echo "Stopping instance..."
-oci compute instance action --action SOFTSTOP --instance-id $INSTANCE_ID
+oci compute instance action --action SOFTSTOP --instance-id $PUPPET_INSTANCE
 ```
 
 ```bash
@@ -193,6 +205,18 @@ chmod u+x start_instance.sh
 ```bash
 chmod u+x stop_instance.sh
 ```
+
+### Grant IAM user permissions to start and stop instances
+
+If you run the scripts at the moment they will fail with 404 `NotAuthorizedOrNotFound`
+
+Your IAM user `hand` doesn't have permissionts to manage compute instances in your compartment.
+
+Create a group `hand-group` and add `hand` user to it
+
+Create a policy with:
+
+`Allow group hand-group to manage instance-family in compartment <compartment_ocid>`
 
 Create a `cron` tab for the schedule time.
 
@@ -226,9 +250,9 @@ tail /var/log/cron
 You should see something like this after half an hour or so:
 
 ```
-Sep 30 11:20:01 scheduler CROND[15369]: (opc) CMD (/bin/sh stop_instance.sh)
-Sep 30 11:30:01 scheduler CROND[17576]: (opc) CMD (/bin/sh start_instance.sh)
-Sep 30 11:40:01 scheduler CROND[19820]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 11:20:01 hand CROND[15369]: (opc) CMD (/bin/sh stop_instance.sh)
+Sep 30 11:30:01 hand CROND[17576]: (opc) CMD (/bin/sh start_instance.sh)
+Sep 30 11:40:01 hand CROND[19820]: (opc) CMD (/bin/sh stop_instance.sh)
 ```
 
 You will also have `start.log` and `stop.log` log files on `/home/opc`.
@@ -267,7 +291,7 @@ Execute on every 10 minutes
 
 This is just a simple example to make you familiar with OCI, in a production environment you should look out for:
 
-- **High Availability**, what happens when the `scheduler` fail?
-- **Observability**, do I know if the `scheduler` fails to perform an action?
+- **High Availability**, what happens when the `hand` fail?
+- **Observability**, do I know if the `hand` fails to perform an action?
 - Don't use public IPs directly with SSH, better to use a **bastion host**
 - Configure `oci` with a user that only have **permissions** to work on a compartment and do the actions that you need
